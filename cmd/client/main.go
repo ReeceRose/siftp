@@ -33,10 +33,28 @@ func main() {
 	}
 	defer file.Close()
 
-	// TODO: actual file upload
-	conn.Write([]byte(file.Name()))
+	fileBuffer := make([]byte, 1024)
+
+	fileInfo, err := file.Stat()
+
 	if err != nil {
 		panic(err)
+	}
+
+	segments := uint32(fileInfo.Size()/1014) + 1
+
+	for i := 0; i < int(segments); i++ {
+		_, err := file.ReadAt(fileBuffer, int64(i*1024))
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				println("read all of the file")
+			}
+		}
+		// TODO: better file upload
+		_, err = conn.Write(fileBuffer)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	uploadMessage := make([]byte, 1024)
