@@ -29,23 +29,24 @@ func main() {
 
 	uploadMessage := make([]byte, 1024)
 
-	for {
-		n, err := conn.Read(uploadMessage)
+	// for {
+	n, err := conn.Read(uploadMessage)
 
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				println("Connection closed, upload failed")
-				println(string(uploadMessage[:n]))
-				break
-			}
-
-			panic(err)
-		}
-
-		// If bytes were read, process the data
-		if n > 0 {
+	if err != nil {
+		if errors.Is(err, io.EOF) {
+			println("Connection closed, upload failed")
 			println(string(uploadMessage[:n]))
-			break
+			// break
+			return
 		}
+
+		panic(err)
 	}
+
+	// If bytes were read, process the data
+	if n > 0 {
+		println(string(uploadMessage[:n]))
+		//
+	}
+	// }
 }
