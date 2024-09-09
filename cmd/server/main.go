@@ -37,6 +37,7 @@ func recieveFile(conn net.Conn) {
 
 	_, err := conn.Read(headerBuffer)
 	if err != nil {
+		println(headerBuffer)
 		if errors.Is(err, io.EOF) {
 			println("EOF recieved while trying to read header")
 			conn.Write([]byte("Failed to read header"))
