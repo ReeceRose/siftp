@@ -50,6 +50,16 @@ func recieveFile(conn net.Conn) {
 		panic(err)
 	}
 
+	os.Mkdir("./uploads", os.ModePerm)
+	file, err := os.Create("./uploads/temp")
+	if err != nil {
+		panic(err)
+	}
+	_, err = file.Write([]byte(string(headerBuffer)))
+	if err != nil {
+		panic(err)
+	}
+
 	conn.Write([]byte("File upload recieved"))
 	println(string(headerBuffer))
 }
