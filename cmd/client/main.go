@@ -1,7 +1,9 @@
 package main
 
 import (
-	"errors"
+	"bufio"
+	"crypto/sha256"
+	"encoding/gob"
 	"fmt"
 	"io"
 	"io/fs"
@@ -12,16 +14,18 @@ import (
 )
 
 func main() {
-	fmt.Println("Client started")
+	println("Client started")
 
 	tcpServer, err := net.ResolveTCPAddr(utils.TCP, utils.SERVER_ADDRESS)
 	if err != nil {
-		panic(err)
+		println("Failed to create TCP client", err)
+		return
 	}
 
 	conn, err := net.DialTCP(utils.TCP, nil, tcpServer)
 	if err != nil {
-		panic(err)
+		println("Failed to create TCP connection", err)
+		return
 	}
 	defer conn.Close()
 
@@ -29,50 +33,63 @@ func main() {
 
 	file, err := os.OpenFile(utils.TEST_FILE_PATH, 0, fs.FileMode(os.O_RDONLY))
 	if err != nil {
-		panic(err)
+		println("Failed to open file", err)
+		return
 	}
 	defer file.Close()
 
-	fileBuffer := make([]byte, 1024)
-
 	fileInfo, err := file.Stat()
-
 	if err != nil {
-		panic(err)
+		println("Failed to get file info", err)
+		return
 	}
 
-	segments := uint32(fileInfo.Size()/1014) + 1
+	writer := bufio.NewWriter(conn)
+	reader := bufio.NewReader(conn)
 
-	for i := 0; i < int(segments); i++ {
-		_, err := file.ReadAt(fileBuffer, int64(i*1024))
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				println("read all of the file")
-			}
-		}
-		// TODO: better file upload
-		_, err = conn.Write(fileBuffer)
-		if err != nil {
-			panic(err)
-		}
+	hash := sha256.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		println("Failed to calculate checksum", err)
+		return
+	}
+	checksum := fmt.Sprintf("%x", hash.Sum(nil))
+
+	if _, err := file.Seek(0, 0); err != nil {
+		println("Failed to reset file pointer", err)
+		return
 	}
 
-	uploadMessage := make([]byte, 1024)
-
-	for {
-		n, err := conn.Read(uploadMessage)
-
-		if err != nil {
-			println(string(uploadMessage[:n]))
-			if errors.Is(err, io.EOF) {
-				println("Connection closed")
-				break
-			}
-			panic(err)
-		}
-
-		if n > 0 {
-			println(string(uploadMessage[:n]))
-		}
+	header := utils.FileHeader{
+		Version:  utils.VERSION_ONE,
+		FileName: fileInfo.Name(),
+		FileSize: fileInfo.Size(),
+		Checksum: checksum,
 	}
+
+	encoder := gob.NewEncoder(writer)
+	err = encoder.Encode(header)
+	if err != nil {
+		println("Failed to encode header", err)
+		return
+	}
+
+	// Send File Data
+	bytesCopied, err := io.Copy(writer, file)
+	if err != nil {
+		println("Failed to copy data to writer", err)
+		return
+	}
+
+	// Flush the writer again after file transfer
+	writer.Flush()
+
+	println("File sent successfully, bytes transferred:", bytesCopied)
+
+	response, err := reader.ReadString('\n')
+	if err != nil {
+		println("Failed to get response from server", err)
+		return
+	}
+
+	println("Server response:", response)
 }
