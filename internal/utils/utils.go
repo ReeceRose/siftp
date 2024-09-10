@@ -7,10 +7,3 @@ const (
 	SERVER_ADDRESS = SERVER_IP + ":" + SERVER_PORT // fmt.Sprintf doesn't work here
 	VERSION_ONE    = "1.0"
 )
-
-type FileHeader struct {
-	Version  string
-	FileName string
-	FileSize int64
-	Checksum string
-}

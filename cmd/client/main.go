@@ -11,20 +11,18 @@ import (
 	"net"
 	"os"
 
-	"github.com/reecerose/siftp/utils"
+	"github.com/reecerose/siftp/internal/logging"
+	"github.com/reecerose/siftp/internal/types"
+	"github.com/reecerose/siftp/internal/utils"
 )
 
 func main() {
-	logFile, err := os.OpenFile("client.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	logFile, err := logging.SetupLogging("client.log")
 	if err != nil {
 		panic(err)
 	}
 
 	defer logFile.Close()
-
-	multiWriter := io.MultiWriter(os.Stdout, logFile)
-	log.SetOutput(multiWriter)
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	if len(os.Args) < 2 {
 		log.Panicln("Usage: go run cmd/client/main.go <file_path>")
@@ -77,7 +75,7 @@ func main() {
 		return
 	}
 
-	header := utils.FileHeader{
+	header := types.FileHeader{
 		Version:  utils.VERSION_ONE,
 		FileName: fileInfo.Name(),
 		FileSize: fileInfo.Size(),

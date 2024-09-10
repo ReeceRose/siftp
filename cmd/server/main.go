@@ -10,20 +10,18 @@ import (
 	"net"
 	"os"
 
-	"github.com/reecerose/siftp/utils"
+	"github.com/reecerose/siftp/internal/logging"
+	"github.com/reecerose/siftp/internal/types"
+	"github.com/reecerose/siftp/internal/utils"
 )
 
 func main() {
-	logFile, err := os.OpenFile("server.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	logFile, err := logging.SetupLogging("client.log")
 	if err != nil {
 		panic(err)
 	}
 
 	defer logFile.Close()
-
-	multiWriter := io.MultiWriter(os.Stdout, logFile)
-	log.SetOutput(multiWriter)
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	listen, err := net.Listen(utils.TCP, utils.SERVER_ADDRESS)
 	if err != nil {
@@ -50,7 +48,7 @@ func recieveFile(conn net.Conn) {
 	writer := bufio.NewWriter(conn)
 
 	decoder := gob.NewDecoder(reader)
-	var header utils.FileHeader
+	var header types.FileHeader
 	err := decoder.Decode(&header)
 	if err != nil {
 		log.Println("Failed to decode header", err)
