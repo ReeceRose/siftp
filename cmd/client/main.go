@@ -14,6 +14,12 @@ import (
 )
 
 func main() {
+	if len(os.Args) < 2 {
+		println("Usage: go run cmd/client/main.go <file_path>")
+		return
+	}
+
+	filePath := os.Args[1]
 	println("Client started")
 
 	tcpServer, err := net.ResolveTCPAddr(utils.TCP, utils.SERVER_ADDRESS)
@@ -31,7 +37,7 @@ func main() {
 
 	println("Connected to " + utils.SERVER_ADDRESS)
 
-	file, err := os.OpenFile(utils.TEST_FILE_PATH, 0, fs.FileMode(os.O_RDONLY))
+	file, err := os.OpenFile(filePath, 0, fs.FileMode(os.O_RDONLY))
 	if err != nil {
 		println("Failed to open file", err)
 		return
