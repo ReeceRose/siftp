@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"crypto/sha256"
-	"encoding/gob"
 	"fmt"
 	"io"
 	"log"
@@ -47,9 +46,7 @@ func recieveFile(conn net.Conn) {
 	reader := bufio.NewReader(conn)
 	writer := bufio.NewWriter(conn)
 
-	decoder := gob.NewDecoder(reader)
-	var header types.FileHeader
-	err := decoder.Decode(&header)
+	header, err := types.DecodeHeader(reader)
 	if err != nil {
 		log.Println("Failed to decode header", err)
 		return
