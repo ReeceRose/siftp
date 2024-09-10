@@ -66,7 +66,7 @@ func main() {
 		return
 	}
 
-	header := types.NewFileHeader(utils.VERSION_ONE, file.Name(), fileInfo.Size(), checksum)
+	header := types.NewFileHeader(utils.VERSION_ONE, fileInfo.Name(), fileInfo.Size(), checksum)
 	err = header.Encode(writer)
 	if err != nil {
 		log.Println("Failed to encode header", err)
